@@ -6,24 +6,28 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { id } = await params
     const body = await request.json()
 
-    const authHeader = request.headers.get("authorization")
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Missing or invalid authorization header" }, { status: 401 })
+    // AUTHENTICATION
+    const apiKey = request.headers.get("x-api-key")
+    if (!apiKey) {
+      return NextResponse.json({ error: "Missing x-api-key header" }, { status: 401 })
     }
 
-    const token = authHeader.substring(7)
     const supabase = await createClient()
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token)
+    // Verify API Key
+    const { data: keyData, error: keyError } = await supabase
+      .from("api_keys")
+      .select("user_id")
+      .eq("key", apiKey)
+      .single()
 
-    if (userError || !user) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
+    if (keyError || !keyData) {
+      return NextResponse.json({ error: "Invalid API Key" }, { status: 401 })
     }
 
-    // Update the trade - RLS will ensure user can only update their own trades
+    const userId = keyData.user_id
+
+    // Update the trade - ensuring user can only update their own trades
     const { data: trade, error: updateError } = await supabase
       .from("trades")
       .update({
@@ -33,7 +37,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         closed_at: body.status === "closed" ? new Date().toISOString() : null,
       })
       .eq("id", id)
-      .eq("user_id", user.id)
+      .eq("user_id", userId) // Use userId from API key
       .select()
       .single()
 
@@ -52,25 +56,29 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   try {
     const { id } = await params
 
-    const authHeader = request.headers.get("authorization")
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Missing or invalid authorization header" }, { status: 401 })
+    // AUTHENTICATION
+    const apiKey = request.headers.get("x-api-key")
+    if (!apiKey) {
+      return NextResponse.json({ error: "Missing x-api-key header" }, { status: 401 })
     }
 
-    const token = authHeader.substring(7)
     const supabase = await createClient()
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token)
+    // Verify API Key
+    const { data: keyData, error: keyError } = await supabase
+      .from("api_keys")
+      .select("user_id")
+      .eq("key", apiKey)
+      .single()
 
-    if (userError || !user) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 })
+    if (keyError || !keyData) {
+      return NextResponse.json({ error: "Invalid API Key" }, { status: 401 })
     }
 
-    // Delete the trade - RLS will ensure user can only delete their own trades
-    const { error: deleteError } = await supabase.from("trades").delete().eq("id", id).eq("user_id", user.id)
+    const userId = keyData.user_id
+
+    // Delete the trade - ensuring user can only delete their own trades
+    const { error: deleteError } = await supabase.from("trades").delete().eq("id", id).eq("user_id", userId) // Use userId from API key
 
     if (deleteError) {
       return NextResponse.json({ error: "Failed to delete trade", details: deleteError.message }, { status: 500 })
