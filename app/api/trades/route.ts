@@ -81,6 +81,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+  console.log("[v0] GET /trades")
   try {
     const authHeader = request.headers.get("authorization")
     if (!authHeader?.startsWith("Bearer ")) {
