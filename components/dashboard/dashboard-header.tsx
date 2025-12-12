@@ -9,10 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { BarChart3, User, LogOut } from "lucide-react"
+import { BarChart3, User, LogOut, Settings } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useState } from "react"
+import { SettingsDialog } from "./settings-dialog"
 
 interface DashboardHeaderProps {
   userEmail: string
@@ -20,6 +22,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
   const router = useRouter()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -35,6 +38,8 @@ export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
           <span className="text-xl font-bold">TradeJournal</span>
         </Link>
 
+        <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
@@ -43,6 +48,11 @@ export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{userEmail}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setIsSettingsOpen(true)} className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />

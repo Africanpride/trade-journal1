@@ -24,3 +24,11 @@ export interface TradeWebhookPayload {
   tp?: number
   sl?: number
 }
+
+export interface ApiKey {
+  id: string
+  user_id: string
+  key: string
+  label: string
+  created_at: string
+}
