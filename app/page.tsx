@@ -14,6 +14,9 @@ export default function LandingPage() {
             <span className="text-xl font-bold">TradeJournal</span>
           </div>
           <nav className="flex items-center gap-4">
+            <Link href="/faqs">
+              <Button variant="ghost">FAQs</Button>
+            </Link>
             <Link href="/auth/login">
               <Button variant="ghost">Login</Button>
             </Link>
