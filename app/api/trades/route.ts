@@ -1,3 +1,4 @@
+// app\api\trades\route.ts
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import type { TradeWebhookPayload } from "@/lib/types"
