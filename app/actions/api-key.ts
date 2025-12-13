@@ -10,7 +10,7 @@ export async function generateApiKey() {
     // key-xxxxxxxxxxxxxxxx
     // 16 bytes = 32 hex chars
     const keyInfo = randomBytes(16).toString("hex")
-    const apiKey = `key-${keyInfo}`
+    const apiKey = `${keyInfo}`
 
     const {
         data: { user },

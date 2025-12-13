@@ -1,5 +1,6 @@
 // app/api/trades/route.ts
 import { createClient } from "@/lib/supabase/server"
+import { supabaseAdmin } from '@/lib/supabase/admin'  // Adjust path
 import { NextResponse } from "next/server"
 import type { TradeWebhookPayload } from "@/lib/types"
 
@@ -32,18 +33,20 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = await createClient()
+    console.log("API KEY RECEIVED:", apiKey);
 
     // Verify API Key
-    const { data: keyData, error: keyError } = await supabase
+    const { data: keyData, error: keyError } = await supabaseAdmin
       .from("api_keys")
       .select("user_id")
       .eq("key", apiKey)
       .single()
 
+    console.log("TESTING");
+
     if (keyError || !keyData) {
       return NextResponse.json(
-        { error: "Invalid API Key" },
+        { error: keyError },
         { status: 401 }
       )
     }
@@ -58,7 +61,7 @@ export async function POST(request: Request) {
       .trim()
 
     // Insert trade into database
-    const { data: trade, error: insertError } = await supabase
+    const { data: trade, error: insertError } = await supabaseAdmin
       .from("trades")
       .insert({
         user_id: userId,
