@@ -11,6 +11,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { BarChart3 } from "lucide-react"
+import { OAuthButtons } from "@/components/auth/oauth-buttons"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -46,7 +47,7 @@ export default function SignUpPage() {
     <div className="flex min-h-screen w-full items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 cursor-pointer">
             <BarChart3 className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold">TradeJournal</span>
           </Link>
@@ -57,43 +58,57 @@ export default function SignUpPage() {
             <CardDescription>Enter your email to create a new trading account</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSignUp}>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="trader@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+            <div className="flex flex-col gap-6">
+              <OAuthButtons />
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
                 </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating account..." : "Create Account"}
-                </Button>
               </div>
-              <div className="mt-4 text-center text-sm">
+
+              <form onSubmit={handleSignUp}>
+                <div className="flex flex-col gap-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="trader@example.com"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
+                  </div>
+                  {error && <p className="text-sm text-destructive">{error}</p>}
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Creating account..." : "Create Account"}
+                  </Button>
+                </div>
+              </form>
+
+              <div className="text-center text-sm">
                 Already have an account?{" "}
-                <Link href="/auth/login" className="underline underline-offset-4">
+                <Link href="/auth/login" className="underline underline-offset-4 cursor-pointer">
                   Login
                 </Link>
               </div>
-            </form>
+            </div>
           </CardContent>
         </Card>
       </div>
