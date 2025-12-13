@@ -1,4 +1,5 @@
 "use client"
+"use client"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -7,6 +8,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Eye, EyeOff, Copy, RefreshCw, Check } from "lucide-react"
 import { generateApiKey, getApiKey } from "@/app/actions/api-key"
 import { toast } from "sonner"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export function ApiKeyManager() {
     const [apiKey, setApiKey] = useState<string | null>(null)
@@ -101,18 +113,46 @@ export function ApiKeyManager() {
                 </div>
             </CardContent>
             <CardFooter>
-                <Button onClick={handleGenerate} disabled={generating}>
-                    {generating ? (
-                        <>
-                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                            Generating...
-                        </>
-                    ) : (
-                        <>
-                            {apiKey ? "Regenerate Key" : "Generate Key"}
-                        </>
-                    )}
-                </Button>
+                {!apiKey ? (
+                    <Button onClick={handleGenerate} disabled={generating}>
+                        {generating ? (
+                            <>
+                                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                Generating...
+                            </>
+                        ) : (
+                            "Generate Key"
+                        )}
+                    </Button>
+                ) : (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button disabled={generating}>
+                                {generating ? (
+                                    <>
+                                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                        Generating...
+                                    </>
+                                ) : (
+                                    "Regenerate Key"
+                                )}
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will invalidate your current API key and
+                                    any scripts or applications using it will stop working immediately.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleGenerate}>Continue</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
             </CardFooter>
         </Card>
     )
