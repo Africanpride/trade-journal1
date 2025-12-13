@@ -2,27 +2,37 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { BarChart3, TrendingUp, Shield, Zap } from "lucide-react"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/server"
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <BarChart3 className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">TradeJournal</span>
-          </div>
+          </Link>
           <nav className="flex items-center gap-4">
-            <Link href="/faqs">
-              <Button variant="ghost">FAQs</Button>
-            </Link>
-            <Link href="/auth/login">
-              <Button variant="ghost">Login</Button>
-            </Link>
-            <Link href="/auth/sign-up">
-              <Button>Get Started</Button>
-            </Link>
+            {user ? (
+              <Link href="/dashboard">
+                <Button>Dashboard</Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/auth/login">
+                  <Button variant="ghost">Login</Button>
+                </Link>
+                <Link href="/auth/sign-up">
+                  <Button>Get Started</Button>
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>

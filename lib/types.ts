@@ -13,6 +13,7 @@ export interface Trade {
   pnl?: number
   created_at: string
   closed_at?: string
+  screenshot_url?: string
 }
 
 export interface TradeWebhookPayload {

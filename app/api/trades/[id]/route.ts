@@ -5,27 +5,30 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const { id } = await params
     const body = await request.json()
-
-    // AUTHENTICATION
-    const apiKey = request.headers.get("x-api-key")
-    if (!apiKey) {
-      return NextResponse.json({ error: "Missing x-api-key header" }, { status: 401 })
-    }
-
     const supabase = await createClient()
+    let userId: string | null = null
 
-    // Verify API Key
-    const { data: keyData, error: keyError } = await supabase
-      .from("api_keys")
-      .select("user_id")
-      .eq("key", apiKey)
-      .single()
+    // 1. Try API Key Authentication
+    const apiKey = request.headers.get("x-api-key")
+    if (apiKey) {
+      const { data: keyData } = await supabase
+        .from("api_keys")
+        .select("user_id")
+        .eq("key", apiKey)
+        .single()
 
-    if (keyError || !keyData) {
-      return NextResponse.json({ error: "Invalid API Key" }, { status: 401 })
+      if (keyData) userId = keyData.user_id
     }
 
-    const userId = keyData.user_id
+    // 2. Try Bearer Token Authentication (Supabase Auth)
+    if (!userId) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) userId = user.id
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     // Update the trade - ensuring user can only update their own trades
     const { data: trade, error: updateError } = await supabase
@@ -35,9 +38,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         exit_price: body.exit_price,
         pnl: body.pnl,
         closed_at: body.status === "closed" ? new Date().toISOString() : null,
+        reasons: body.reasons, // Allow updating reasons
+        screenshot_url: body.screenshot_url, // Allow updating screenshot
       })
       .eq("id", id)
-      .eq("user_id", userId) // Use userId from API key
+      .eq("user_id", userId)
       .select()
       .single()
 
@@ -55,30 +60,33 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-
-    // AUTHENTICATION
-    const apiKey = request.headers.get("x-api-key")
-    if (!apiKey) {
-      return NextResponse.json({ error: "Missing x-api-key header" }, { status: 401 })
-    }
-
     const supabase = await createClient()
+    let userId: string | null = null
 
-    // Verify API Key
-    const { data: keyData, error: keyError } = await supabase
-      .from("api_keys")
-      .select("user_id")
-      .eq("key", apiKey)
-      .single()
+    // 1. Try API Key Authentication
+    const apiKey = request.headers.get("x-api-key")
+    if (apiKey) {
+      const { data: keyData } = await supabase
+        .from("api_keys")
+        .select("user_id")
+        .eq("key", apiKey)
+        .single()
 
-    if (keyError || !keyData) {
-      return NextResponse.json({ error: "Invalid API Key" }, { status: 401 })
+      if (keyData) userId = keyData.user_id
     }
 
-    const userId = keyData.user_id
+    // 2. Try Bearer Token Authentication (Supabase Auth)
+    if (!userId) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) userId = user.id
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     // Delete the trade - ensuring user can only delete their own trades
-    const { error: deleteError } = await supabase.from("trades").delete().eq("id", id).eq("user_id", userId) // Use userId from API key
+    const { error: deleteError } = await supabase.from("trades").delete().eq("id", id).eq("user_id", userId)
 
     if (deleteError) {
       return NextResponse.json({ error: "Failed to delete trade", details: deleteError.message }, { status: 500 })
