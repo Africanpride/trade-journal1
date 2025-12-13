@@ -33,7 +33,7 @@ export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
   return (
     <header className="border-b bg-background">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <BarChart3 className="h-6 w-6 text-primary" />
           <span className="text-xl font-bold">TradeJournal</span>
         </Link>

@@ -14,21 +14,21 @@ export default async function LandingPage() {
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 cursor-pointer">
             <BarChart3 className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">TradeJournal</span>
           </Link>
           <nav className="flex items-center gap-4">
             {user ? (
-              <Link href="/dashboard">
+              <Link href="/dashboard" className="cursor-pointer">
                 <Button>Dashboard</Button>
               </Link>
             ) : (
               <>
-                <Link href="/auth/login">
+                <Link href="/auth/login" className="cursor-pointer">
                   <Button variant="ghost">Login</Button>
                 </Link>
-                <Link href="/auth/sign-up">
+                <Link href="/auth/sign-up" className="cursor-pointer">
                   <Button>Get Started</Button>
                 </Link>
               </>
@@ -49,16 +49,26 @@ export default async function LandingPage() {
               your decision-making with detailed performance insights.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/auth/sign-up">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Start Free Trial
-                </Button>
-              </Link>
-              <Link href="/auth/login">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent">
-                  View Dashboard
-                </Button>
-              </Link>
+              {user ? (
+                <Link href="/dashboard" className="cursor-pointer">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/auth/sign-up" className="cursor-pointer">
+                    <Button size="lg" className="w-full sm:w-auto">
+                      Get Started
+                    </Button>
+                  </Link>
+                  <Link href="/auth/login" className="cursor-pointer">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent">
+                      View Dashboard
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
