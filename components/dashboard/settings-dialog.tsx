@@ -7,7 +7,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApiKeyManager } from "@/components/api-key-manager"
+import { ProfileForm } from "./profile-form"
 
 interface SettingsDialogProps {
     open: boolean
@@ -21,12 +23,21 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <DialogHeader>
                     <DialogTitle>Settings</DialogTitle>
                     <DialogDescription>
-                        Manage your account settings and API keys.
+                        Manage your account settings, API keys, and profile.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                    <ApiKeyManager />
-                </div>
+                <Tabs defaultValue="apikey" className="py-4">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="apikey">API Key</TabsTrigger>
+                        <TabsTrigger value="profile">Profile</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="apikey" className="mt-4">
+                        <ApiKeyManager />
+                    </TabsContent>
+                    <TabsContent value="profile" className="mt-4">
+                        <ProfileForm />
+                    </TabsContent>
+                </Tabs>
             </DialogContent>
         </Dialog>
     )
