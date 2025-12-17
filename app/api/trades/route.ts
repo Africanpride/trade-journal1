@@ -1,89 +1,94 @@
 // app/api/trades/route.ts
-import { createClient } from "@/lib/supabase/server"
-import { supabaseAdmin } from '@/lib/supabase/admin'  // Adjust path
-import { NextResponse } from "next/server"
-import type { TradeWebhookPayload } from "@/lib/types"
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as TradeWebhookPayload
+    const body = await request.json();
 
-    // Validate required fields
-    if (!body.pair || !body.timeframe || !body.direction || !body.entry) {
-      return NextResponse.json(
-        { error: "Missing required fields: pair, timeframe, direction, entry" },
-        { status: 400 }
-      )
-    }
+    // === AUTHENTICATION FROM BODY (consistent with /notify) ===
+    const providedApiKey = body.apiKey;
 
-    // Validate direction
-    if (body.direction !== "BUY" && body.direction !== "SELL") {
+    if (!providedApiKey) {
       return NextResponse.json(
-        { error: "Direction must be either BUY or SELL" },
-        { status: 400 }
-      )
-    }
-
-    // AUTHENTICATION
-    const apiKey = request.headers.get("x-api-key")
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Missing x-api-key header" },
+        { error: "Missing apiKey in request body" },
         { status: 401 }
-      )
+      );
     }
 
-    console.log("API KEY RECEIVED:", apiKey);
-
-    // Verify API Key
+    // Verify API Key in database
     const { data: keyData, error: keyError } = await supabaseAdmin
       .from("api_keys")
       .select("user_id")
-      .eq("key", apiKey)
-      .single()
-
-    console.log("TESTING");
+      .eq("key", providedApiKey)
+      .single();
 
     if (keyError || !keyData) {
+      console.warn('[AUTH FAIL] Invalid apiKey for /trades', {
+        timestamp: new Date().toISOString(),
+        providedKeyPreview: providedApiKey.substring(0, 8) + '...',
+      });
       return NextResponse.json(
-        { error: keyError },
+        { error: "Invalid API key" },
         { status: 401 }
-      )
+      );
     }
 
-    const userId = keyData.user_id
+    console.info('[AUTH SUCCESS] Valid apiKey for trade journal', {
+      user_id: keyData.user_id,
+      timestamp: new Date().toISOString(),
+    });
 
-    // Extract reasons from message if provided
-    const reasons = body.message
+    const { pair, timeframe, direction, entry, tp, sl, message } = body;
+
+    // Validate required fields
+    if (!pair || !timeframe || !direction || !entry) {
+      return NextResponse.json(
+        { error: "Missing required fields: pair, timeframe, direction, entry" },
+        { status: 400 }
+      );
+    }
+
+    if (!["BUY", "SELL"].includes(direction)) {
+      return NextResponse.json(
+        { error: "Direction must be BUY or SELL" },
+        { status: 400 }
+      );
+    }
+
+    // Extract reasons
+    const reasons = message
       ?.split("\n")
-      .find((line) => line.startsWith("Reasons:"))
+      .find((line: string) => line.startsWith("Reasons:"))
       ?.replace("Reasons:", "")
-      .trim()
+      .trim() || message;
 
-    // Insert trade into database
+    // Insert trade
     const { data: trade, error: insertError } = await supabaseAdmin
       .from("trades")
       .insert({
-        user_id: userId,
-        pair: body.pair,
-        timeframe: body.timeframe,
-        direction: body.direction,
-        entry: body.entry,
-        tp: body.tp,
-        sl: body.sl,
-        reasons: reasons || body.message,
+        user_id: keyData.user_id,
+        pair,
+        timeframe,
+        direction,
+        entry,
+        tp,
+        sl,
+        reasons,
         status: "open",
       })
       .select()
-      .single()
+      .single();
 
     if (insertError) {
-      console.error("[v0] Error inserting trade:", insertError)
+      console.error("[TRADE INSERT ERROR]", insertError);
       return NextResponse.json(
-        { error: "Failed to create trade", details: insertError.message },
+        { error: "Failed to log trade", details: insertError.message },
         { status: 500 }
-      )
+      );
     }
+
+    console.info('[TRADE JOURNALED]', { pair, direction, entry, trade_id: trade.id });
 
     return NextResponse.json(
       {
@@ -92,21 +97,10 @@ export async function POST(request: Request) {
         message: "Trade logged successfully",
       },
       { status: 201 }
-    )
+    );
+
   } catch (error) {
-    console.error("[v0] Error processing trade webhook:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("[TRADES ENDPOINT ERROR]", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}
-
-// GET still works the same way (you can keep it or remove auth here too)
-export async function GET(request: Request) {
-  const supabase = await createClient()
-  const { data: trades } = await supabase
-    .from("trades")
-    .select("*")
-    .eq("user_id", "e85523e6-69c0-4924-9249-528aeeee11cc")
-    .order("created_at", { ascending: false })
-
-  return NextResponse.json({ trades })
 }
