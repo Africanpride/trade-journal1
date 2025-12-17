@@ -131,47 +131,26 @@ export function EditTradeDialog({ trade, open, onOpenChange }: EditTradeDialogPr
                                                     </Button>
                                                 </div>
                                             ) : (
-                                                process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ? (
-                                                    <CldUploadWidget
-                                                        uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
-                                                        options={{
-                                                            sources: ["local", "url", "camera"],
-                                                            multiple: false,
-                                                            maxFiles: 1,
-                                                            clientAllowedFormats: ["image"],
-                                                            zIndex: 2000, // Ensure it's above the Dialog
-                                                        } as any}
-                                                        onSuccess={(result: any) => {
-                                                            if (result.info?.secure_url) {
-                                                                field.onChange(result.info.secure_url)
-                                                            }
-                                                        }}
-                                                        onError={(error) => {
-                                                            console.error("Cloudinary Error:", error)
-                                                            toast.error("Upload failed")
-                                                        }}
-                                                    >
-                                                        {({ open }) => (
-                                                            <div
-                                                                onClick={() => open()}
-                                                                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed p-8 hover:bg-muted/50"
-                                                            >
-                                                                <Upload className="h-8 w-8 text-muted-foreground" />
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    Click to upload screenshot
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                    </CldUploadWidget>
-                                                ) : (
-                                                    <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed p-8 bg-muted/20">
-                                                        <Upload className="h-8 w-8 text-muted-foreground/50" />
-                                                        <p className="text-sm text-muted-foreground text-center">
-                                                            Cloudinary credentials missing.<br />
-                                                            Please configure .env
-                                                        </p>
-                                                    </div>
-                                                )
+                                                <CldUploadWidget
+                                                    uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+                                                    onSuccess={(result: any) => {
+                                                        if (result.info?.secure_url) {
+                                                            field.onChange(result.info.secure_url)
+                                                        }
+                                                    }}
+                                                >
+                                                    {({ open }) => (
+                                                        <div
+                                                            onClick={() => open()}
+                                                            className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed p-8 hover:bg-muted/50"
+                                                        >
+                                                            <Upload className="h-8 w-8 text-muted-foreground" />
+                                                            <p className="text-sm text-muted-foreground">
+                                                                Click to upload screenshot
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </CldUploadWidget>
                                             )}
                                         </div>
                                     </FormControl>

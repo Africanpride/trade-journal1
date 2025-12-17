@@ -16,9 +16,9 @@ A professional trade journal app for tracking and analyzing your trading perform
 
 Run the SQL script to create the necessary tables:
 
-\`\`\`bash
+```bash
 # The trades table will be automatically created from scripts/001_create_trades_table.sql
-\`\`\`
+```
 
 ### 2. Sign Up
 
@@ -30,12 +30,12 @@ After logging in, you'll need to get your access token for API requests. You can
 
 For development, you can get your token from the browser console after logging in:
 
-\`\`\`javascript
+```javascript
 // In browser console after login
 const supabase = createClient()
 const { data } = await supabase.auth.getSession()
 console.log(data.session.access_token)
-\`\`\`
+```
 
 ### 4. Send Trades via API
 
@@ -44,13 +44,13 @@ Send trades to the webhook endpoint:
 **POST** `/api/trades`
 
 Headers:
-\`\`\`
+```
 Content-Type: application/json
 Authorization: Bearer YOUR_ACCESS_TOKEN
-\`\`\`
+```
 
 Body:
-\`\`\`json
+```json
 {
   "message": "BUY\nReasons: Bullish Engulfing, Support Bounce",
   "pair": "EURUSD",
@@ -60,7 +60,7 @@ Body:
   "tp": 1.09020,
   "sl": 1.08020
 }
-\`\`\`
+```
 
 ### 5. View Your Dashboard
 
@@ -103,13 +103,13 @@ Navigate to `/dashboard` to see your trades, statistics, and performance metrics
 
 ## Development
 
-\`\`\`bash
+```bash
 # Install dependencies
 npm install
 
 # Run development server
 npm run dev
-\`\`\`
+```
 
 ## Deployment
 

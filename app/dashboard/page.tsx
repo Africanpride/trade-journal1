@@ -17,13 +17,6 @@ export default async function DashboardPage() {
     redirect("/auth/login")
   }
 
-  // Fetch user profile for role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("user_id", user.id)
-    .single()
-
   // Fetch user's trades
   const { data: trades, error: tradesError } = await supabase
     .from("trades")
@@ -43,7 +36,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardHeader userEmail={user.email || ""} userRole={profile?.role || "user"} />
+      <DashboardHeader userEmail={user.email || ""} />
 
       <main className="flex-1 bg-muted/40">
         <div className="container mx-auto px-4 py-8">

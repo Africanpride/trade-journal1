@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { BarChart3, User, LogOut, Settings, Shield } from "lucide-react"
+import { BarChart3, User, LogOut, Settings } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -18,10 +18,9 @@ import { SettingsDialog } from "./settings-dialog"
 
 interface DashboardHeaderProps {
   userEmail: string
-  userRole?: string
 }
 
-export function DashboardHeader({ userEmail, userRole }: DashboardHeaderProps) {
+export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
   const router = useRouter()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
@@ -50,16 +49,6 @@ export function DashboardHeader({ userEmail, userRole }: DashboardHeaderProps) {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{userEmail}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-
-            {(userRole === "admin" || userRole === "superadmin") && (
-              <DropdownMenuItem asChild>
-                <Link href="/admin" className="cursor-pointer w-full flex items-center">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Admin Panel
-                </Link>
-              </DropdownMenuItem>
-            )}
-
             <DropdownMenuItem onSelect={() => setIsSettingsOpen(true)} className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
               Settings
