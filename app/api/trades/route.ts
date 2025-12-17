@@ -16,14 +16,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify API Key in database
-    const { data: keyData, error: keyError } = await supabaseAdmin
-      .from("api_keys")
-      .select("user_id")
-      .eq("key", providedApiKey)
-      .single();
-
-    if (keyError || !keyData) {
+    // Verify API Key against environment variable
+    if (providedApiKey !== process.env.API_KEY) {
       console.warn('[AUTH FAIL] Invalid apiKey for /trades', {
         timestamp: new Date().toISOString(),
         providedKeyPreview: providedApiKey.substring(0, 8) + '...',
@@ -34,8 +28,18 @@ export async function POST(request: Request) {
       );
     }
 
+    const userId = process.env.USER_ID;
+
+    if (!userId) {
+      console.error('[CONFIG ERROR] USER_ID not set in environment');
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
     console.info('[AUTH SUCCESS] Valid apiKey for trade journal', {
-      user_id: keyData.user_id,
+      user_id: userId,
       timestamp: new Date().toISOString(),
     });
 
@@ -67,7 +71,7 @@ export async function POST(request: Request) {
     const { data: trade, error: insertError } = await supabaseAdmin
       .from("trades")
       .insert({
-        user_id: keyData.user_id,
+        user_id: userId,
         pair,
         timeframe,
         direction,

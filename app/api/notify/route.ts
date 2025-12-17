@@ -1,6 +1,6 @@
 // app/api/notify/route.ts
 import { NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+
 
 export async function POST(request: NextRequest) {
     try {
@@ -14,14 +14,8 @@ export async function POST(request: NextRequest) {
             return new Response('Unauthorized: Missing API key', { status: 401 });
         }
 
-        // Verify against database
-        const { data: keyData, error: keyError } = await supabaseAdmin
-            .from('api_keys')
-            .select('user_id')
-            .eq('key', providedApiKey)
-            .single();
-
-        if (keyError || !keyData) {
+        // Verify against environment variable
+        if (providedApiKey !== process.env.API_KEY) {
             console.warn('[AUTH FAIL] Invalid apiKey', {
                 timestamp: new Date().toISOString(),
                 ip,
@@ -30,7 +24,7 @@ export async function POST(request: NextRequest) {
             return new Response('Unauthorized: Invalid API key', { status: 401 });
         }
 
-        console.info('[AUTH SUCCESS] Valid apiKey', { timestamp: new Date().toISOString(), ip, user_id: keyData.user_id });
+        console.info('[AUTH SUCCESS] Valid apiKey', { timestamp: new Date().toISOString(), ip });
 
         const {
             message = '',
