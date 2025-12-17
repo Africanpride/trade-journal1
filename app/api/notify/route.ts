@@ -1,12 +1,39 @@
 // app/api/notify/route.ts
 import { NextRequest } from 'next/server';
 
-
 export async function POST(request: NextRequest) {
-    try {
-        const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
-        const body = await request.json();
+    const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
 
+    try {
+        // Step 1: Read raw body as text
+        const rawBody = await request.text();
+
+        console.info('[RAW REQUEST BODY RECEIVED]', {
+            timestamp: new Date().toISOString(),
+            ip,
+            contentLength: rawBody.length,
+            rawBody: rawBody.substring(0, 1000) + (rawBody.length > 1000 ? '...' : ''),
+        });
+
+        // Step 2: Try to parse JSON
+        let body;
+        try {
+            body = JSON.parse(rawBody);
+        } catch (parseError) {
+            const err = parseError as Error;
+            console.error('[JSON PARSE ERROR]', {
+                timestamp: new Date().toISOString(),
+                ip,
+                error: err.message,
+                rawBodyPreview: rawBody.substring(0, 300),
+            });
+            return new Response(
+                `Invalid JSON format: ${err.message}\nReceived (first 500 chars): ${rawBody.substring(0, 500)}`,
+                { status: 400 }
+            );
+        }
+
+        // Step 3: Now proceed with normal logic
         const providedApiKey = body.apiKey;
 
         if (!providedApiKey) {
@@ -14,7 +41,6 @@ export async function POST(request: NextRequest) {
             return new Response('Unauthorized: Missing API key', { status: 401 });
         }
 
-        // Verify against environment variable
         if (providedApiKey !== process.env.API_KEY) {
             console.warn('[AUTH FAIL] Invalid apiKey', {
                 timestamp: new Date().toISOString(),
@@ -62,16 +88,24 @@ ${message}
         );
 
         if (!telegramResponse.ok) {
-            const error = await telegramResponse.text();
-            console.error('[TELEGRAM ERROR]', { status: telegramResponse.status, error });
+            const errorText = await telegramResponse.text();
+            console.error('[TELEGRAM ERROR]', {
+                status: telegramResponse.status,
+                error: errorText,
+                timestamp: new Date().toISOString(),
+            });
             return new Response('Failed to send to Telegram', { status: 500 });
         }
 
-        console.info('[SIGNAL FORWARDED] Success', { pair, direction, entry });
+        console.info('[SIGNAL FORWARDED] Success', { pair, direction, entry, timestamp: new Date().toISOString() });
 
         return new Response('Signal received and forwarded to Telegram', { status: 200 });
     } catch (error) {
-        console.error('[SERVER ERROR]', error);
+        console.error('[SERVER ERROR] Unexpected error in /notify:', {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+            timestamp: new Date().toISOString(),
+        });
         return new Response('Internal Server Error', { status: 500 });
     }
 }
