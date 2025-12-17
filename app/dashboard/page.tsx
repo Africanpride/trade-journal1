@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { TradesList } from "@/components/dashboard/trades-list"
+import { Footer } from "@/components/dashboard/footer"
 import type { Trade } from "@/lib/types"
 
 export default async function DashboardPage() {
@@ -52,6 +53,7 @@ export default async function DashboardPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }
