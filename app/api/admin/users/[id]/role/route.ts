@@ -12,8 +12,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check if user is superadmin
-        const { data: userData, error: roleError } = await supabase
+        // Check if user is superadmin using admin client to bypass RLS
+        const { data: userData, error: roleError } = await supabaseAdmin
             .from('users')
             .select('role')
             .eq('id', user.id)
@@ -24,7 +24,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
         }
 
         const { role } = await request.json();
-        const targetUserId = params.id;
+        const { id: targetUserId } = await params;
 
         if (!['user', 'admin', 'superadmin'].includes(role)) {
             return NextResponse.json({ error: 'Invalid role' }, { status: 400 });

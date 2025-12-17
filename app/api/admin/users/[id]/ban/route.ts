@@ -12,8 +12,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check if user is superadmin
-        const { data: userData, error: roleError } = await supabase
+        // Check if user is superadmin using admin client to bypass RLS
+        const { data: userData, error: roleError } = await supabaseAdmin
             .from('users')
             .select('role')
             .eq('id', user.id)
@@ -24,7 +24,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         }
 
         const { ban } = await request.json();
-        const targetUserId = params.id;
+        const { id: targetUserId } = await params;
 
         // Update banned_at field
         const { error: banError } = await supabaseAdmin

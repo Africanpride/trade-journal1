@@ -12,24 +12,18 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check if user is superadmin
-        const { data: userData, error: roleError } = await supabase.auth.getUser()
-
-        if (!userData || !userData.user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const { data: currentUserData } = await supabase
+        // Check if user is superadmin using admin client to bypass RLS
+        const { data: currentUserData, error: roleError } = await supabaseAdmin
             .from('users')
             .select('role')
-            .eq('id', userData.user.id)
+            .eq('id', user.id)
             .single();
 
-        if (!currentUserData || currentUserData.role !== 'superadmin') {
+        if (roleError || !currentUserData || currentUserData.role !== 'superadmin') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        const targetUserId = params.id;
+        const { id: targetUserId } = await params;
 
         // Delete user using Supabase Admin API (will cascade delete related data)
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
