@@ -1,5 +1,6 @@
 // app/api/notify/route.ts
 import { NextRequest } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export async function POST(request: NextRequest) {
     const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
@@ -40,17 +41,53 @@ export async function POST(request: NextRequest) {
             console.warn('[AUTH FAIL] Missing apiKey', { timestamp: new Date().toISOString(), ip });
             return new Response('Unauthorized: Missing API key', { status: 401 });
         }
+        // Verify against environment variable OR database
+        let userId: string | null = null;
 
-        if (providedApiKey !== process.env.API_KEY) {
-            console.warn('[AUTH FAIL] Invalid apiKey', {
-                timestamp: new Date().toISOString(),
-                ip,
-                providedKeyPreview: providedApiKey.substring(0, 8) + '...',
-            });
-            return new Response('Unauthorized: Invalid API key', { status: 401 });
+        // First check env var for backward compatibility
+        if (providedApiKey === process.env.API_KEY) {
+            console.info('[AUTH SUCCESS] Valid apiKey (env)', { timestamp: new Date().toISOString(), ip });
+            // For env-based auth, we don't have a specific user
+        } else {
+            // Check database for personalApiKey
+            const { data: keyData, error: keyError } = await supabaseAdmin
+                .from('api_keys')
+                .select('user_id')
+                .eq('key', providedApiKey)
+                .single();
+
+            if (keyError || !keyData) {
+                console.warn('[AUTH FAIL] Invalid apiKey', {
+                    timestamp: new Date().toISOString(),
+                    ip,
+                    providedKeyPreview: providedApiKey.substring(0, 8) + '...',
+                });
+                return new Response('Unauthorized: Invalid API key', { status: 401 });
+            }
+
+            userId = keyData.user_id;
+            console.info('[AUTH SUCCESS] Valid personalApiKey', { timestamp: new Date().toISOString(), ip, user_id: userId });
         }
 
-        console.info('[AUTH SUCCESS] Valid apiKey', { timestamp: new Date().toISOString(), ip });
+        // Check telegram notification preference if we have a user_id
+        if (userId) {
+            const { data: preferences } = await supabaseAdmin
+                .from('user_preferences')
+                .select('enable_telegram_notifications')
+                .eq('user_id', userId)
+                .single();
+
+            const telegramEnabled = preferences?.enable_telegram_notifications ?? true;
+
+            if (!telegramEnabled) {
+                console.info('[TELEGRAM DISABLED] Notification not sent', {
+                    user_id: userId,
+                    pair: body.pair,
+                    timestamp: new Date().toISOString(),
+                });
+                return new Response('Telegram notifications are currently disabled', { status: 200 });
+            }
+        }
 
         const {
             message = '',

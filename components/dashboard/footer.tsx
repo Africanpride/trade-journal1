@@ -7,23 +7,15 @@ export function Footer() {
                 <p className="text-balance text-center text-sm leading-loose text-muted-foreground md:text-left">
                     Built by{" "}
                     <a
-                        href="#"
+                        href="/"
                         target="_blank"
                         rel="noreferrer"
                         className="font-medium underline underline-offset-4"
                     >
-                        Antigravity
+                        VuvuQuant Inc.
                     </a>
-                    . The source code is available on{" "}
-                    <a
-                        href="#"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-medium underline underline-offset-4"
-                    >
-                        GitHub
-                    </a>
-                    .
+                    {" "}
+                    All Righrs Reserved.
                 </p>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Theme:</span>

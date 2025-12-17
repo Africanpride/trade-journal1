@@ -4,20 +4,50 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const rawBody = await request.text();
+    const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
 
-    // === AUTHENTICATION FROM BODY (consistent with /notify) ===
-    const providedApiKey = body.apiKey;
+    console.info('[INCOMING REQUEST] /api/trades', {
+      timestamp: new Date().toISOString(),
+      ip,
+      contentLength: rawBody.length,
+      rawBodyPreview: rawBody.substring(0, 500),
+    });
+
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch (parseError) {
+      const err = parseError as Error;
+      console.error('[JSON PARSE ERROR]', {
+        timestamp: new Date().toISOString(),
+        ip,
+        error: err.message,
+        rawBodyPreview: rawBody.substring(0, 300),
+      });
+      return NextResponse.json(
+        { error: `Invalid JSON format: ${err.message}` },
+        { status: 400 }
+      );
+    }
+
+    const providedApiKey = body.personalApiKey;
 
     if (!providedApiKey) {
       return NextResponse.json(
-        { error: "Missing apiKey in request body" },
+        { error: "Missing personalApiKey in request body" },
         { status: 401 }
       );
     }
 
-    // Verify API Key against environment variable
-    if (providedApiKey !== process.env.API_KEY) {
+    // Verify API Key in database
+    const { data: keyData, error: keyError } = await supabaseAdmin
+      .from("api_keys")
+      .select("user_id")
+      .eq("key", providedApiKey)
+      .single();
+
+    if (keyError || !keyData) {
       console.warn('[AUTH FAIL] Invalid apiKey for /trades', {
         timestamp: new Date().toISOString(),
         providedKeyPreview: providedApiKey.substring(0, 8) + '...',
@@ -28,20 +58,34 @@ export async function POST(request: Request) {
       );
     }
 
-    const userId = process.env.USER_ID;
-
-    if (!userId) {
-      console.error('[CONFIG ERROR] USER_ID not set in environment');
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 }
-      );
-    }
-
     console.info('[AUTH SUCCESS] Valid apiKey for trade journal', {
-      user_id: userId,
+      user_id: keyData.user_id,
       timestamp: new Date().toISOString(),
     });
+
+    // Check journalling preference
+    const { data: preferences } = await supabaseAdmin
+      .from('user_preferences')
+      .select('enable_journalling')
+      .eq('user_id', keyData.user_id)
+      .single();
+
+    const journallingEnabled = preferences?.enable_journalling ?? true;
+
+    if (!journallingEnabled) {
+      console.info('[JOURNALLING DISABLED] Trade not logged', {
+        user_id: keyData.user_id,
+        pair: body.pair,
+        timestamp: new Date().toISOString(),
+      });
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Trade journalling is currently disabled',
+        },
+        { status: 200 }
+      );
+    }
 
     const { pair, timeframe, direction, entry, tp, sl, message } = body;
 
@@ -71,7 +115,7 @@ export async function POST(request: Request) {
     const { data: trade, error: insertError } = await supabaseAdmin
       .from("trades")
       .insert({
-        user_id: userId,
+        user_id: keyData.user_id,
         pair,
         timeframe,
         direction,
